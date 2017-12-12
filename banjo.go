@@ -8,9 +8,7 @@ package banjo
 
 import (
 	"fmt"
-	"log"
 	"net"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -193,8 +191,8 @@ func (banjo Banjo) Run() {
 	server, err := net.Listen("tcp", banjo.config.host+":"+banjo.config.port)
 
 	if err != nil {
-		log.Fatal(err)
-		os.Exit(1)
+		banjo.logger.Critical("Error while trying to create connection")
+		panic(err)
 	}
 
 	defer server.Close()
@@ -203,8 +201,9 @@ func (banjo Banjo) Run() {
 		conn, err := server.Accept()
 
 		if err != nil {
-			banjo.logger.Error("Error while trying to accept incomming connection")
-			log.Fatal(err)
+			str := fmt.Sprintf("Error while trying to accept incomming connection:\nError: %v", err)
+			banjo.logger.Error(str)
+			continue
 		}
 
 		go banjo.handleRequest(conn)
@@ -230,8 +229,9 @@ func (banjo Banjo) handleRequest(conn net.Conn) {
 	_, err := conn.Read(data)
 
 	if err != nil {
-		banjo.logger.Error("Error while reading request data")
-		log.Fatal(err)
+		str := fmt.Sprintf("Error while reading request data:\nError: %v", err)
+		banjo.logger.Error(str)
+		return
 	}
 
 	bytes := make([]byte, 2048)

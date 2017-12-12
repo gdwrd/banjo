@@ -3,7 +3,6 @@ package banjo
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"time"
@@ -23,9 +22,13 @@ type Logger struct {
 // Returns Logger with default filePath
 //
 func CreateLogger() Logger {
-	return Logger{
-		filePath: "banjo_out.log",
+	path := os.Getenv("BANJO_LOG")
+
+	if path == "" {
+		path = "banjo_out.log"
 	}
+
+	return Logger{filePath: path}
 }
 
 // Info function
@@ -97,7 +100,12 @@ func (logger Logger) Error(message string) {
 //
 func (logger Logger) log(level string, message string) {
 	logLine := formatMessage(level, message)
-	logger.writeToLogFile(logLine + "\n")
+	err := logger.writeToLogFile(logLine + "\n")
+
+	if err != nil {
+		str := fmt.Sprintf("Error while trying save logs to file:\nError: %v", err)
+		fmt.Println(formatMessage("ERROR", str))
+	}
 
 	fmt.Println(logLine)
 }
@@ -110,28 +118,30 @@ func (logger Logger) log(level string, message string) {
 // - line {string}
 //
 // Response:
-// - None
+// - err {Error} returns error if something went wrong
 //
-func (logger Logger) writeToLogFile(line string) {
+func (logger Logger) writeToLogFile(line string) error {
 	_, err := os.Stat(logger.filePath)
 
 	if os.IsNotExist(err) {
 		_, err := os.Create(logger.filePath)
 		if err != nil {
-			log.Fatal(formatMessage("ERROR", err.Error()))
+			return err
 		}
 	}
 
 	f, err := os.OpenFile(logger.filePath, os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
-		log.Fatal(formatMessage("ERROR", err.Error()))
+		return err
 	}
 
 	defer f.Close()
 
 	if _, err := f.WriteString(line); err != nil {
-		log.Fatal(formatMessage("ERROR", err.Error()))
+		return err
 	}
+
+	return nil
 }
 
 // formatMessage function

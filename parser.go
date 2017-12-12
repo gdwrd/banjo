@@ -2,8 +2,8 @@ package banjo
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	"log"
 	"strings"
 )
 
@@ -137,24 +137,19 @@ func parseHeaders(data []string) map[string]string {
 //
 func parseParams(data string, cType string) (map[string]string, []map[string]string) {
 	params := make(map[string]string)
+	logger := CreateLogger()
 	files := []map[string]string{}
-	var boundary string
 
 	if strings.Contains(cType, "application/json") {
 		return params, files
 	} else if strings.Contains(cType, "application/x-www-form-urlencoded") {
 		params = parseFormParams(data)
 	} else if strings.Contains(cType, "multipart/form-data") {
-		types := strings.Split(cType, "; ")
+		boundary, err := parseBoundary(cType)
 
-		if str := types[1]; str != "" {
-			array := strings.Split(str, "=")
-
-			if boundary = array[1]; boundary == "" {
-				log.Fatal("Error while parsing `multipart/form-data` headers, boundary required")
-			}
-		} else {
-			log.Fatal("Error while parsing `multipart/form-data` headers, boundary required")
+		if err != nil {
+			str := fmt.Sprintf("Error while parsing boundary:\nError:%v", err)
+			logger.Error(str)
 		}
 
 		params, files = parseMultipartParams(data, boundary)
@@ -247,4 +242,31 @@ func parseMultipartParams(data string, boundary string) (map[string]string, []ma
 	}
 
 	return params, files
+}
+
+// parseBoundary function
+//
+// Retunrs boundary if exist & error
+//
+// Params:
+// - data {string}
+//
+// Response:
+// - b 	 {string} This is boundary
+// - err {error}  Parsing boundary error
+//
+func parseBoundary(data string) (b string, err error) {
+	types := strings.Split(data, "; ")
+
+	if str := types[1]; str != "" {
+		array := strings.Split(str, "=")
+
+		if b = array[1]; b == "" {
+			err = errors.New("boundary didn't exist")
+		}
+	} else {
+		err = errors.New("boundary didn't exist")
+	}
+
+	return
 }

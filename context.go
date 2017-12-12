@@ -2,7 +2,7 @@ package banjo
 
 import (
 	"encoding/json"
-	"log"
+	"fmt"
 )
 
 // Context struct
@@ -27,10 +27,15 @@ type Context struct {
 // - None
 //
 func (ctx *Context) JSON(data map[string]interface{}) {
+	logger := CreateLogger()
 	body, err := json.Marshal(data)
 
 	if err != nil {
-		log.Fatal("Error while trying to parse JSON body response")
+		str := fmt.Sprintf("Error while parsing JSON object:\nError: %v\nData: %s", err, data)
+		logger.Error(str)
+
+		ctx.InternalServerError()
+		return
 	}
 
 	if ctx.Response.Headers == nil {
@@ -85,4 +90,18 @@ func (ctx *Context) RedirectTo(url string) {
 
 	ctx.Response.Headers["Location"] = url
 	ctx.Response.Status = 301
+}
+
+// InternalServerError function
+//
+// Modify Context struct with 500 Status error & Internal Server Error body
+//
+// Params:
+// - None
+//
+// Response:
+// - None
+func (ctx *Context) InternalServerError() {
+	ctx.Response.Status = 500
+	ctx.Response.Body = "Internal Server Error"
 }

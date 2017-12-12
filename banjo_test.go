@@ -139,6 +139,19 @@ func TestJSONPreparingToResponseFunction(t *testing.T) {
 	}
 }
 
+func TestJSONParsingErrorFunction(t *testing.T) {
+	ctx := Context{}
+	ctx.JSON(M{"foo": func(i int) int { return i }})
+
+	if ctx.Response.Status != 500 {
+		t.Errorf("Status should be 500")
+	}
+
+	if ctx.Response.Body != "Internal Server Error" {
+		t.Errorf("Body should be `Internal Server Error`")
+	}
+}
+
 func TestHTMLPreparingToResponseFunction(t *testing.T) {
 	ctx := &Context{}
 	ctx.HTML("<h1>Hello from Banjo</h1>")
