@@ -41,7 +41,7 @@ func (p Parser) Request(rawData string) Request {
 		if len(data) == 2 {
 			rawH, rawB = data[0], data[1]
 		} else {
-			rawH, rawB = data[0], strings.Join(data[1:len(data)], DubSeparator)
+			rawH, rawB = data[0], strings.Join(data[1:], DubSeparator)
 		}
 	} else {
 		rawH = rawData
@@ -220,7 +220,7 @@ func parseMultipartParams(data string, boundary string) (map[string]string, []ma
 		array := strings.Split(item, DubSeparator)
 		fieldHeader, fieldContent := array[0], array[1]
 		array = strings.Split(fieldHeader, "; ")
-		array = array[1:len(array)]
+		array = array[1:]
 
 		if strings.Contains(fieldHeader, "filename") {
 			for _, i := range array {
